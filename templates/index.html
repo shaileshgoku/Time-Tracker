@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="glass-card">
+            <header>
+                <h1>Time Tracker</h1>
+                <p>Track your work hours effortlessly</p>
+            </header>
+
+            <form id="timeForm">
+                <div id="intervals-container">
+                    <div class="interval-row">
+                        <div class="input-group">
+                            <label>Start Time</label>
+                            <input type="text" name="start_time" placeholder="e.g. 1:10 pm" required autocomplete="off">
+                        </div>
+                        <div class="input-group">
+                            <label>End Time</label>
+                            <input type="text" name="end_time" placeholder="e.g. 1:20 pm" required autocomplete="off">
+                        </div>
+                        <span class="row-duration"></span>
+                        <button type="button" class="remove-btn" onclick="removeRow(this)" title="Remove">×</button>
+                    </div>
+                </div>
+
+                <button type="button" id="addBtn" class="secondary-btn">
+                    + Add Interval
+                </button>
+
+                <button type="submit" id="calculateBtn">
+                    <span>Calculate Total Duration</span>
+                </button>
+            </form>
+
+            <div id="result" class="result-display hidden">
+                <span class="label">Total Time</span>
+                <span class="value" id="resultValue">--</span>
+            </div>
+
+            <div id="error" class="error-msg hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('addBtn').addEventListener('click', function () {
+            const container = document.getElementById('intervals-container');
+            const row = document.createElement('div');
+            row.className = 'interval-row fade-in';
+            row.innerHTML = `
+                <div class="input-group">
+                    <label>Start Time</label>
+                    <input type="text" name="start_time" placeholder="e.g. 1:40 pm" required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>End Time</label>
+                    <input type="text" name="end_time" placeholder="e.g. 1:50 pm" required autocomplete="off">
+                </div>
+                <span class="row-duration"></span>
+                <button type="button" class="remove-btn" onclick="removeRow(this)" title="Remove">×</button>
+            `;
+            container.appendChild(row);
+        });
+
+        function removeRow(btn) {
+            const container = document.getElementById('intervals-container');
+            if (container.children.length > 1) {
+                btn.closest('.interval-row').remove();
+            } else {
+                // Clear inputs if it's the last row
+                const inputs = btn.closest('.interval-row').querySelectorAll('input');
+                inputs.forEach(input => input.value = '');
+            }
+        }
+
+        document.getElementById('timeForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const rows = document.querySelectorAll('.interval-row');
+            const intervals = [];
+
+            rows.forEach(row => {
+                const start = row.querySelector('input[name="start_time"]').value;
+                const end = row.querySelector('input[name="end_time"]').value;
+                intervals.push({ start, end });
+            });
+
+            const resultDiv = document.getElementById('result');
+            const resultValue = document.getElementById('resultValue');
+            const errorDiv = document.getElementById('error');
+            const btn = document.getElementById('calculateBtn');
+
+            // Reset UI
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            btn.classList.add('loading');
+
+            // Clear previous row durations
+            document.querySelectorAll('.row-duration').forEach(el => el.textContent = '');
+
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ intervals: intervals }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultValue.textContent = data.result;
+                    resultDiv.classList.remove('hidden');
+
+                    // Update individual row durations
+                    if (data.breakdown) {
+                        const rowDurationEls = document.querySelectorAll('.row-duration');
+                        data.breakdown.forEach((item, index) => {
+                            if (rowDurationEls[index]) {
+                                let text = [];
+                                if (item.hours > 0) text.push(`${item.hours}h`);
+                                if (item.minutes > 0) text.push(`${item.minutes}m`);
+                                rowDurationEls[index].textContent = text.join(' ') || '0m';
+                                rowDurationEls[index].classList.add('show');
+                            }
+                        });
+                    }
+                } else {
+                    errorDiv.textContent = data.error || 'An error occurred';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Failed to connect to server.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                btn.classList.remove('loading');
+            }
+        });
+    </script>
+</body>
+
+</html>
