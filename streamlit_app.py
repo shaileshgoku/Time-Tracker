@@ -124,10 +124,6 @@ def remove_row(index):
 st.title("⏳ Time Tracker")
 st.markdown("Track your work hours effortlessly.")
 
-# --- UI ---
-st.title("⏳ Time Tracker")
-st.markdown("Track your work hours effortlessly.")
-
 with st.container():
     # Loop through intervals
     for i, interval in enumerate(st.session_state.intervals):
