@@ -122,7 +122,7 @@ def remove_row(index):
 
 # --- UI ---
 st.title("⏳ Time Tracker")
-st.markdown("Track your work hours effortlessly.")
+st.markdown("Champions always will be in transition phase")
 
 with st.container():
     # Loop through intervals
