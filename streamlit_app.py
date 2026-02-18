@@ -187,13 +187,33 @@ with st.container():
     st.markdown("---")
 
     if st.button("Calculate Total Duration", type="primary"):
-        total_sec, _ = calculate_intervals(st.session_state.intervals)
+        total_sec, breakdown = calculate_intervals(st.session_state.intervals)
         
         total_h = total_sec // 3600
         total_m = (total_sec % 3600) // 60
         
         if total_h > 0 or total_m > 0:
             st.metric(label="Grand Total", value=f"{total_h}h {total_m}m")
+            
+            # Prepare Report
+            report_lines = ["Time Tracker Report", "="*20, ""]
+            for i, (interval, dur_str) in enumerate(zip(st.session_state.intervals, breakdown)):
+                s = interval['start']
+                e = interval['end']
+                if s and e:
+                    report_lines.append(f"Interval {i+1}: {s} - {e} ({dur_str})")
+            
+            report_lines.append("")
+            report_lines.append(f"Grand Total: {total_h}h {total_m}m")
+            report_text = "\n".join(report_lines)
+            
+            st.download_button(
+                label="Download Report",
+                data=report_text,
+                file_name="time_tracker_report.txt",
+                mime="text/plain"
+            )
+            
         else:
             st.info("Enter times to see the calculation.")
 
