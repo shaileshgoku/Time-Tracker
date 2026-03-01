@@ -196,7 +196,8 @@ with st.container():
             st.metric(label="Grand Total", value=f"{total_h}h {total_m}m")
             
             # Prepare Report
-            report_lines = ["Time Tracker Report", "="*20, ""]
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            report_lines = ["Time Tracker Report", f"Date: {current_date}", "="*20, ""]
             for i, (interval, dur_str) in enumerate(zip(st.session_state.intervals, breakdown)):
                 s = interval['start']
                 e = interval['end']
